@@ -5,7 +5,9 @@ const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const employeerouter = require("./routes/employee.route");
 const authRouter = require('./routes/auth.route');
-const dashboardRouter = require('./routes/dashboard.route'); // Import the dashboard route
+const dashboardRouter = require('./routes/dashboard.route');
+const projectRouter = require('./routes/project.route');
+const taskRouter = require('./routes/task.route');
 const app = express();
 
 dotenv.config({ path: "./config.env" });
@@ -15,7 +17,7 @@ app.use(morgan('dev'))
 
 app.use(cors({
   origin: "*",
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
 }));
@@ -37,9 +39,11 @@ mongoose
   });
 
 
-app.use('/api',employeerouter);
+app.use('/api/employees', employeerouter);
 app.use('/api/auth', authRouter);
-app.use('/api/dashboard',dashboardRouter);
+app.use('/api/dashboard', dashboardRouter);
+app.use('/api/projects', projectRouter);
+app.use('/api/tasks', taskRouter);
 
 
 const port = process.env.PORT || 11000;

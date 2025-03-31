@@ -3,10 +3,13 @@ const Employee = require('../models/employee.model');
 // Create a new employee
 exports.createEmployee = async (req, res) => {
     try {
-        const employee=await Employee.create(req.body);
+        console.log('Creating employee with data:', req.body);
+        const employee = await Employee.create(req.body);
+        console.log('Employee created successfully:', employee);
         res.status(201).send(employee);
     } catch (error) {
-        res.status(400).send(error);
+        console.error('Error creating employee:', error);
+        res.status(400).send({ message: error.message });
     }
 };
 

@@ -42,13 +42,17 @@ const EmployeeSchema = new mongoose.Schema({
         }
     },
     contact: {
-        type: Number,
+        type: String,
         required: true,
         validate(value) {
-            if (value < 9000000000 || value > 9999999999) {
-                throw new Error('Contact must be a 10 digit number');
+            if (!validator.isMobilePhone(value, 'any')) {
+                throw new Error('Invalid phone number format');
             }
         }
+    },
+    joiningDate: {
+        type: Date,
+        required: true
     }
 });
 
