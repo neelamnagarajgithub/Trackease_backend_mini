@@ -5,7 +5,7 @@ const Task = require('../models/task.model');
 // Get all projects
 const getAllProjects = async (req, res) => {
     try {
-        const projects = await Project.find()
+        const projects = await Project.find({ organizationId: req.organizationId })
             .populate('assignedEmployees', 'name email position');
         
         res.status(200).json(projects);
@@ -21,7 +21,10 @@ const getAllProjects = async (req, res) => {
 // Get single project by ID
 const getProjectById = async (req, res) => {
     try {
-        const project = await Project.findById(req.params.id)
+        const project = await Project.findOne({
+                _id: req.params.id,
+                organizationId: req.organizationId
+            })
             .populate('assignedEmployees', 'name email position');
         
         if (!project) {
@@ -41,7 +44,12 @@ const getProjectById = async (req, res) => {
 // Create new project
 const createProject = async (req, res) => {
     try {
-        const newProject = new Project(req.body);
+        const projectData = {
+            ...req.body,
+            organizationId: req.organizationId
+        };
+        
+        const newProject = new Project(projectData);
         const savedProject = await newProject.save();
         
         res.status(201).json(savedProject);
@@ -57,8 +65,11 @@ const createProject = async (req, res) => {
 // Update project
 const updateProject = async (req, res) => {
     try {
-        const updatedProject = await Project.findByIdAndUpdate(
-            req.params.id,
+        const updatedProject = await Project.findOneAndUpdate(
+            {
+                _id: req.params.id,
+                organizationId: req.organizationId
+            },
             req.body,
             { new: true, runValidators: true }
         ).populate('assignedEmployees', 'name email position');
@@ -80,14 +91,20 @@ const updateProject = async (req, res) => {
 // Delete project
 const deleteProject = async (req, res) => {
     try {
-        const deletedProject = await Project.findByIdAndDelete(req.params.id);
+        const deletedProject = await Project.findOneAndDelete({
+            _id: req.params.id,
+            organizationId: req.organizationId
+        });
         
         if (!deletedProject) {
             return res.status(404).json({ message: 'Project not found' });
         }
         
         // Also delete associated tasks
-        await Task.deleteMany({ project: req.params.id });
+        await Task.deleteMany({ 
+            project: req.params.id,
+            organizationId: req.organizationId 
+        });
         
         res.status(200).json({ message: 'Project deleted successfully' });
     } catch (error) {
@@ -102,7 +119,20 @@ const deleteProject = async (req, res) => {
 // Get project tasks
 const getProjectTasks = async (req, res) => {
     try {
-        const tasks = await Task.find({ project: req.params.id })
+        // First verify that the project belongs to the user's organization
+        const project = await Project.findOne({
+            _id: req.params.id,
+            organizationId: req.organizationId
+        });
+        
+        if (!project) {
+            return res.status(404).json({ message: 'Project not found' });
+        }
+        
+        const tasks = await Task.find({ 
+                project: req.params.id,
+                organizationId: req.organizationId
+            })
             .populate('assignedTo', 'name email position')
             .populate('project', 'name');
         

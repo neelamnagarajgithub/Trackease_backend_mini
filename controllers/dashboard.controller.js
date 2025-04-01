@@ -4,15 +4,29 @@ const Task = require('../models/task.model');
 
 const getDashboardData = async (req, res) => {
     try {
-        // Basic metrics
-        const totalEmployees = await Employee.countDocuments();
-        const activeProjects = await Project.countDocuments({ status: 'active' });
-        const pendingTasks = await Task.countDocuments({ status: 'pending' });
-        const completedTasks = await Task.countDocuments({ status: 'completed' });
+        const organizationId = req.organizationId;
+
+        // Basic metrics - filtered by organization
+        const totalEmployees = await Employee.countDocuments({ organizationId });
+        const activeProjects = await Project.countDocuments({ 
+            status: 'active',
+            organizationId
+        });
+        const pendingTasks = await Task.countDocuments({ 
+            status: 'pending',
+            organizationId
+        });
+        const completedTasks = await Task.countDocuments({ 
+            status: 'completed',
+            organizationId
+        });
         const attendanceRate = 85; // Mock data for demonstration purposes
 
         // Project progress metrics - Calculate overall project completion percentage
-        const projects = await Project.find({ status: 'active' })
+        const projects = await Project.find({ 
+            status: 'active',
+            organizationId
+        })
             .select('name startDate endDate totalTasks completedTasks')
             .limit(5);
 
@@ -33,16 +47,20 @@ const getDashboardData = async (req, res) => {
         // Task status distribution
         const taskStatusDistribution = {
             pending: pendingTasks,
-            inProgress: await Task.countDocuments({ status: 'in-progress' }),
+            inProgress: await Task.countDocuments({ 
+                status: 'in-progress',
+                organizationId
+            }),
             completed: completedTasks,
             overdue: await Task.countDocuments({ 
                 status: { $ne: 'completed' }, 
-                dueDate: { $lt: new Date() } 
+                dueDate: { $lt: new Date() },
+                organizationId
             })
         };
 
         // Fetch recent activities (example: last 5 tasks)
-        const recentActivities = await Task.find()
+        const recentActivities = await Task.find({ organizationId })
             .sort({ updatedAt: -1 })
             .limit(5)
             .populate('assignedTo', 'name')
@@ -69,7 +87,10 @@ const getDashboardData = async (req, res) => {
             recentActivities: formattedActivities,
             projectProgress,
             taskStatusDistribution,
-            taskCompletionRate
+            taskCompletionRate,
+            organizationData: {
+                id: organizationId
+            }
         });
     } catch (error) {
         console.error('Dashboard error:', error);

@@ -3,8 +3,14 @@ const Employee = require('../models/employee.model');
 // Create a new employee
 exports.createEmployee = async (req, res) => {
     try {
-        console.log('Creating employee with data:', req.body);
-        const employee = await Employee.create(req.body);
+        // Add organization ID from authenticated user
+        const employeeData = {
+            ...req.body,
+            organizationId: req.organizationId
+        };
+
+        console.log('Creating employee with data:', employeeData);
+        const employee = await Employee.create(employeeData);
         console.log('Employee created successfully:', employee);
         res.status(201).send(employee);
     } catch (error) {
@@ -16,7 +22,8 @@ exports.createEmployee = async (req, res) => {
 // Get all employees
 exports.getAllEmployees = async (req, res) => {
     try {
-        const employees = await Employee.find({});
+        // Only get employees for the user's organization
+        const employees = await Employee.find({ organizationId: req.organizationId });
         res.status(200).send(employees);
     } catch (error) {
         res.status(500).send(error);
@@ -26,9 +33,13 @@ exports.getAllEmployees = async (req, res) => {
 // Get an employee by ID
 exports.getEmployeeById = async (req, res) => {
     try {
-        const employee = await Employee.findById(req.params.id);
+        const employee = await Employee.findOne({ 
+            _id: req.params.id,
+            organizationId: req.organizationId
+        });
+        
         if (!employee) {
-            return res.status(404).send();
+            return res.status(404).send({ message: 'Employee not found' });
         }
         res.status(200).send(employee);
     } catch (error) {
@@ -39,7 +50,7 @@ exports.getEmployeeById = async (req, res) => {
 // Update an employee by ID
 exports.updateEmployeeById = async (req, res) => {
     const updates = Object.keys(req.body);
-    const allowedUpdates = ['name', 'position', 'department', 'email', 'hireDate', 'salary'];
+    const allowedUpdates = ['name', 'position', 'department', 'email', 'hireDate', 'salary', 'contact', 'phone', 'address'];
     const isValidOperation = updates.every((update) => allowedUpdates.includes(update));
 
     if (!isValidOperation) {
@@ -47,9 +58,14 @@ exports.updateEmployeeById = async (req, res) => {
     }
 
     try {
-        const employee = await Employee.findById(req.params.id);
+        // Ensure employee belongs to user's organization
+        const employee = await Employee.findOne({
+            _id: req.params.id,
+            organizationId: req.organizationId
+        });
+        
         if (!employee) {
-            return res.status(404).send();
+            return res.status(404).send({ message: 'Employee not found' });
         }
 
         updates.forEach((update) => (employee[update] = req.body[update]));
@@ -63,9 +79,14 @@ exports.updateEmployeeById = async (req, res) => {
 // Delete an employee by ID
 exports.deleteEmployeeById = async (req, res) => {
     try {
-        const employee = await Employee.findByIdAndDelete(req.params.id);
+        // Ensure employee belongs to user's organization
+        const employee = await Employee.findOneAndDelete({
+            _id: req.params.id,
+            organizationId: req.organizationId
+        });
+        
         if (!employee) {
-            return res.status(404).send();
+            return res.status(404).send({ message: 'Employee not found' });
         }
         res.status(200).send(employee);
     } catch (error) {

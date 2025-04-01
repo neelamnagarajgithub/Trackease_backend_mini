@@ -38,13 +38,17 @@ mongoose
     console.log("DB Disconnected");
   });
 
+// Import auth middleware
+const { authMiddleware } = require('./middleware/auth.middleware');
 
-app.use('/api/employees', employeerouter);
+// Auth routes (no middleware needed)
 app.use('/api/auth', authRouter);
-app.use('/api/dashboard', dashboardRouter);
-app.use('/api/projects', projectRouter);
-app.use('/api/tasks', taskRouter);
 
+// Protected routes (need authentication)
+app.use('/api/employees', authMiddleware, employeerouter);
+app.use('/api/dashboard', authMiddleware, dashboardRouter);
+app.use('/api/projects', authMiddleware, projectRouter);
+app.use('/api/tasks', authMiddleware, taskRouter);
 
 const port = process.env.PORT || 11000;
 

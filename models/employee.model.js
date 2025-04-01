@@ -53,6 +53,11 @@ const EmployeeSchema = new mongoose.Schema({
     joiningDate: {
         type: Date,
         required: true
+    },
+    organizationId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Organization',
+        required: true
     }
 });
 
